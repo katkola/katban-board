@@ -13,7 +13,7 @@
   let loading = true;
   let error: string | null = null;
 
-  onMount(async () => {
+  async function loadBoardData() {
     try {
       const boardId = $page.params.id;
       if (!boardId) throw new Error('No board ID provided');
@@ -26,7 +26,17 @@
     } finally {
       loading = false;
     }
+  }
+
+  function handleCardAdded() {
+    // Reload cards to show the newly added card
+    loadBoardData();
+  }
+
+  onMount(async () => {
+    await loadBoardData();
   });
+
 </script>
 
 <div class="board-view">
@@ -52,7 +62,7 @@
   {:else if board && columns.length > 0}
     <div class="columns-container">
       {#each columns as column (column.id)}
-        <Column {column} {cards} />
+        <Column {column} {cards} onCardAdded={handleCardAdded} />
       {/each}
     </div>
   {:else if board}
