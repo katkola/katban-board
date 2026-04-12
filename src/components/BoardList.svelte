@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { getBoards, createBoard } from '$lib/api/boards';
   import type { Board } from '$lib/types';
 
@@ -7,6 +8,10 @@
   let newBoardName = '';
   let loading = false;
   let error: string | null = null;
+
+  function handleBoardClick(boardId: string) {
+    goto(`/board/${boardId}`);
+  }
 
   async function loadBoards() {
     loading = true;
@@ -67,7 +72,14 @@
         <h2>Your Boards ({boards.length})</h2>
         <div class="boards-grid">
           {#each boards as board}
-            <div class="board-card" style="border-left-color: {board.color || '#6B7280'}">
+            <div
+              class="board-card"
+              style="border-left-color: {board.color || '#6B7280'}"
+              on:click={() => handleBoardClick(board.id)}
+              on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleBoardClick(board.id)}
+              role="button"
+              tabindex="0"
+            >
               <h3>{board.name}</h3>
               <p class="board-id">ID: {board.id}</p>
               <p class="board-date">
@@ -182,11 +194,17 @@
     padding: 1.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
   }
 
   .board-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .board-card:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
 
   .board-card h3 {
