@@ -1,7 +1,13 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import type { Card as CardType } from '$lib/types';
 
   export let card: CardType;
+
+  function handleCardClick() {
+    goto(`/board/${$page.params.id}/card/${card.id}`);
+  }
 
   const daysUntilDue = card.due_date
     ? Math.ceil((new Date(card.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
@@ -20,7 +26,13 @@
   };
 </script>
 
-<div class="card">
+<div
+  class="card"
+  on:click={handleCardClick}
+  on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleCardClick()}
+  role="button"
+  tabindex="0"
+>
   <h4 class="card-title">{card.title}</h4>
 
   {#if card.description}
@@ -59,6 +71,11 @@
   .card:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  .card:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
   }
 
   .card-title {
