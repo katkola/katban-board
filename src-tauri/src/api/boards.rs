@@ -1,11 +1,11 @@
 use chrono::Utc;
-use rusqlite::Connection;
+// use rusqlite::Connection;
 
 use crate::db::connection::create_connection;
 use crate::models::{Board, BoardId};
 
 /// Database state for Tauri
-pub struct DbState(pub Connection);
+// pub struct DbState(pub Connection);
 
 /// Create a new board
 #[tauri::command]

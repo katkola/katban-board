@@ -1,7 +1,7 @@
 <script lang="ts">
   import Card from './Card.svelte';
   import { createCard } from '$lib/api/cards';
-  import type { Column as ColumnType, Card as CardType } from '$lib/types';
+  import type { Column as ColumnType, Task as CardType } from '$lib/types';
 
   export let column: ColumnType;
   export let cards: CardType[] = [];

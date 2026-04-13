@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Tag, Card } from '../types';
+import type { Tag, Task } from '../types';
 
 /**
  * Tag API functions
@@ -25,6 +25,6 @@ export async function removeTagFromCard(cardId: string, tagId: string): Promise<
   return await invoke<void>('remove_tag_from_card', { cardId, tagId });
 }
 
-export async function filterCardsByTag(boardId: string, tagIds: string[]): Promise<Card[]> {
-  return await invoke<Card[]>('filter_cards_by_tag', { boardId, tagIds });
+export async function filterCardsByTag(boardId: string, tagIds: string[]): Promise<Task[]> {
+  return await invoke<Task[]>('filter_cards_by_tag', { boardId, tagIds });
 }

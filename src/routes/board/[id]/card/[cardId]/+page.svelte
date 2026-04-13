@@ -3,12 +3,13 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { getCard, updateCard, moveCard, deleteCard } from '$lib/api/cards';
-  import { getBoard } from '$lib/api/boards';
+  import { getBoard, getBoards } from '$lib/api/boards';
   import { getColumns } from '$lib/api/columns';
-  import type { Card, Board, Column } from '$lib/types';
+  import type { Task, Board, Column } from '$lib/types';
 
-  let card: Card | null = null;
+  let card: Task | null = null;
   let board: Board | null = null;
+  let boards: Board[] = [];
   let columns: Column[] = [];
   let loading = true;
   let error: string | null = null;
@@ -19,6 +20,7 @@
   let editDescription = '';
   let editDueDate = '';
   let editColumnId = '';
+  let editBoardId = '';
 
   async function loadData() {
     try {
@@ -30,12 +32,14 @@
       card = await getCard(cardId);
       board = await getBoard(boardId);
       columns = await getColumns(boardId);
+      boards = await getBoards();
 
       if (card) {
         editTitle = card.title;
         editDescription = card.description || '';
         editDueDate = card.due_date || '';
         editColumnId = card.column_id;
+        editBoardId = card.board_id;
       }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to load card';
@@ -50,17 +54,30 @@
     isSaving = true;
     error = null;
     try {
-      // Check if we need to move the card
+      // If board changed, redirect to the new board's page after moving
+      const boardChanged = editBoardId !== card.board_id;
+      const targetBoardId = editBoardId || card.board_id;
+
+      // Move card to new column (handles both column and board changes)
       if (editColumnId !== card.column_id) {
         await moveCard(card.id, editColumnId, 0);
       }
 
       // Update card details
-      await updateCard(card.id, editTitle, editDescription || undefined, editDueDate || undefined);
+      await updateCard(card.id, {
+        title: editTitle,
+        description: editDescription || undefined,
+        due_date: editDueDate || undefined,
+      });
 
-      // Reload card data
-      await loadData();
-      isEditing = false;
+      // If board changed, navigate to the new board
+      if (boardChanged) {
+        goto(`/board/${targetBoardId}`);
+      } else {
+        // Otherwise reload card data and close edit mode
+        await loadData();
+        isEditing = false;
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to save card';
     } finally {
@@ -90,6 +107,24 @@
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  // Update columns when board selection changes
+  $: if (editBoardId && editBoardId !== card?.board_id) {
+    (async () => {
+      try {
+        columns = await getColumns(editBoardId);
+        // Auto-select the first column of the new board
+        if (columns.length > 0 && editColumnId) {
+          // Keep current column if it exists in new board, otherwise use first
+          if (!columns.find(c => c.id === editColumnId)) {
+            editColumnId = columns[0].id;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load columns for new board:', e);
+      }
+    })();
   }
 
   onMount(() => {
@@ -142,6 +177,15 @@
               />
             </div>
 
+            <div>
+              <label for="board">Board</label>
+              <select id="board" bind:value={editBoardId}>
+                {#each boards as board}
+                  <option value={board.id}>{board.name}</option>
+                {/each}
+              </select>
+            </div>
+
             <div class="form-group">
               <label for="column">Status/Column</label>
               <select id="column" bind:value={editColumnId}>
@@ -173,13 +217,13 @@
 
             <div class="details-grid">
               <div class="detail-item">
-                <label>Status</label>
+                <h5>Status</h5>
                 <div class="value">{getCurrentColumnName()}</div>
               </div>
 
               {#if card.due_date}
                 <div class="detail-item">
-                  <label>Due Date</label>
+                  <h5>Due Date</h5>
                   <div class="value">
                     {new Date(card.due_date).toLocaleDateString('en-US', {
                       weekday: 'short',
@@ -192,7 +236,7 @@
               {/if}
 
               <div class="detail-item">
-                <label>Created</label>
+                <h5>Created</h5>
                 <div class="value">
                   {new Date(card.created_at).toLocaleDateString('en-US', {
                     month: 'short',
@@ -203,7 +247,7 @@
               </div>
 
               <div class="detail-item">
-                <label>ID</label>
+                <h5>ID</h5>
                 <div class="value mono">{card.id}</div>
               </div>
             </div>
@@ -236,7 +280,7 @@
     background: white;
     border-bottom: 1px solid #e5e7eb;
     padding: 1rem 2rem;
-    sticky: 0;
+    position: sticky;
     top: 0;
     z-index: 10;
   }
@@ -317,14 +361,14 @@
     border-bottom: 1px solid #e5e7eb;
   }
 
-  .detail-item label {
+  /* .detail-item label {
     display: block;
     font-size: 0.875rem;
     color: #666;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.5rem;
-  }
+  } */
 
   .detail-item .value {
     font-size: 1.125rem;

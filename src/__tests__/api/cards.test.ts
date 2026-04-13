@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { invoke } from '@tauri-apps/api/core';
 
+// Mock invoke before importing the API
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
-import type { Card } from '$lib/types';
+import { invoke } from '@tauri-apps/api/core';
+import { getCards, createCard, deleteCard, updateCard } from '$lib/api/cards';
+import { Status, type Task } from '$lib/types';
 
 describe('Card API', () => {
   beforeEach(() => {
@@ -14,7 +16,7 @@ describe('Card API', () => {
 
   describe('getCards', () => {
     it('should fetch cards for a board', async () => {
-      const mockCards: Card[] = [
+      const mockCards: Task[] = [
         {
           id: '1',
           title: 'Task 1',
@@ -22,8 +24,8 @@ describe('Card API', () => {
           column_id: 'col1',
           board_id: 'board1',
           position: 0,
+          status: Status.ToDo,
           due_date: null,
-          is_completed: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -34,8 +36,8 @@ describe('Card API', () => {
           column_id: 'col1',
           board_id: 'board1',
           position: 1,
+          status: Status.InProgress,
           due_date: new Date().toISOString(),
-          is_completed: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -43,16 +45,15 @@ describe('Card API', () => {
 
       vi.mocked(invoke).mockResolvedValue(mockCards);
 
-      const { getCards } = await import('$lib/api/cards');
       const cards = await getCards(undefined, 'board1');
 
-      expect(invoke).toHaveBeenCalledWith('get_cards', { column_id: undefined, board_id: 'board1' });
+      expect(invoke).toHaveBeenCalledWith('get_cards', { columnId: undefined, boardId: 'board1' });
       expect(cards).toEqual(mockCards);
       expect(cards).toHaveLength(2);
     });
 
     it('should filter cards by column', async () => {
-      const mockCards: Card[] = [
+      const mockCards: Task[] = [
         {
           id: '1',
           title: 'Task 1',
@@ -60,8 +61,8 @@ describe('Card API', () => {
           column_id: 'col1',
           board_id: 'board1',
           position: 0,
+          status: Status.ToDo,
           due_date: null,
-          is_completed: false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -69,53 +70,56 @@ describe('Card API', () => {
 
       vi.mocked(invoke).mockResolvedValue(mockCards);
 
-      const { getCards } = await import('$lib/api/cards');
       const cards = await getCards('col1', 'board1');
 
-      expect(invoke).toHaveBeenCalledWith('get_cards', { column_id: 'col1', board_id: 'board1' });
+      expect(invoke).toHaveBeenCalledWith('get_cards', { columnId: 'col1', boardId: 'board1' });
       expect(cards).toHaveLength(1);
     });
   });
 
   describe('createCard', () => {
     it('should create a new card', async () => {
-      const mockCard: Card = {
+      const mockCard: Task = {
         id: '3',
         title: 'New Task',
-        description: '',
+        description: null,
         column_id: 'col1',
         board_id: 'board1',
         position: 2,
+        status: Status.ToDo,
         due_date: null,
-        is_completed: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
       vi.mocked(invoke).mockResolvedValue(mockCard);
 
-      const { createCard } = await import('$lib/api/cards');
       const card = await createCard('col1', 'New Task');
 
       expect(invoke).toHaveBeenCalledWith('create_card', {
-        column_id: 'col1',
+        columnId: 'col1',
         title: 'New Task',
+        description: undefined,
+        dueDate: undefined,
       });
       expect(card.title).toBe('New Task');
     });
 
     it('should reject empty card titles', async () => {
-      const { createCard } = await import('$lib/api/cards');
+      await expect(createCard('col1', '')).rejects.toThrow('Card title cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
+    });
 
-      await expect(createCard('col1', '')).rejects.toThrow();
+    it('should reject whitespace-only titles', async () => {
+      await expect(createCard('col1', '   ')).rejects.toThrow('Card title cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteCard', () => {
     it('should delete a card by ID', async () => {
-      vi.mocked(invoke).mockResolvedValue(null);
+      vi.mocked(invoke).mockResolvedValue(undefined);
 
-      const { deleteCard } = await import('$lib/api/cards');
       await deleteCard('1');
 
       expect(invoke).toHaveBeenCalledWith('delete_card', { id: '1' });
@@ -123,31 +127,59 @@ describe('Card API', () => {
   });
 
   describe('updateCard', () => {
-    it('should update card properties', async () => {
-      const updatedCard: Card = {
+    it('should update card title', async () => {
+      const updatedCard: Task = {
         id: '1',
         title: 'Updated Task',
         description: 'Updated description',
         column_id: 'col1',
         board_id: 'board1',
         position: 0,
+        status: Status.ToDo,
         due_date: null,
-        is_completed: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
 
       vi.mocked(invoke).mockResolvedValue(updatedCard);
 
-      const { updateCard } = await import('$lib/api/cards');
-      const card = await updateCard('1', { title: 'Updated Task', is_completed: true });
+      const card = await updateCard('1', { title: 'Updated Task' });
 
       expect(invoke).toHaveBeenCalledWith('update_card', {
         id: '1',
         title: 'Updated Task',
-        is_completed: true,
       });
-      expect(card.is_completed).toBe(true);
+      expect(card.title).toBe('Updated Task');
+    });
+
+    it('should update card description', async () => {
+      const updatedCard: Task = {
+        id: '1',
+        title: 'Task',
+        description: 'Updated description',
+        column_id: 'col1',
+        board_id: 'board1',
+        position: 0,
+        status: Status.Done,
+        due_date: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      vi.mocked(invoke).mockResolvedValue(updatedCard);
+
+      const card = await updateCard('1', { description: 'Updated description' });
+
+      expect(invoke).toHaveBeenCalledWith('update_card', {
+        id: '1',
+        description: 'Updated description',
+      });
+      expect(card.description).toBe('Updated description');
+    });
+
+    it('should reject empty card titles', async () => {
+      await expect(updateCard('1', { title: '' })).rejects.toThrow('Card title cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,4 +1,3 @@
-use rusqlite::Connection;
 use crate::models::{Column, BoardId};
 use crate::db::connection::create_connection;
 

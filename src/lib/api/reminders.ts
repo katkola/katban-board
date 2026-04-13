@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Card, Reminder } from '../types';
+import type { Task, Reminder } from '../types';
 
 /**
  * Reminder API functions
@@ -9,8 +9,8 @@ export async function getDueCards(
   boardId?: string,
   from?: string,
   to?: string
-): Promise<Card[]> {
-  return await invoke<Card[]>('get_due_cards', { boardId, from, to });
+): Promise<Task[]> {
+  return await invoke<Task[]>('get_due_cards', { boardId, from, to });
 }
 
 export async function scheduleReminder(cardId: string, scheduledAt: string): Promise<Reminder> {

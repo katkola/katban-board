@@ -1,11 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { invoke } from '@tauri-apps/api/core';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock the Tauri invoke function
+// Mock invoke before importing the API
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
+import { invoke } from '@tauri-apps/api/core';
+import { getBoards, createBoard, deleteBoard, updateBoard } from '$lib/api/boards';
 import type { Board } from '$lib/types';
 
 describe('Board API', () => {
@@ -34,7 +35,6 @@ describe('Board API', () => {
 
       vi.mocked(invoke).mockResolvedValue(mockBoards);
 
-      const { getBoards } = await import('$lib/api/boards');
       const boards = await getBoards();
 
       expect(invoke).toHaveBeenCalledWith('get_boards');
@@ -45,8 +45,6 @@ describe('Board API', () => {
     it('should handle errors when fetching boards', async () => {
       const error = new Error('Database error');
       vi.mocked(invoke).mockRejectedValue(error);
-
-      const { getBoards } = await import('$lib/api/boards');
 
       await expect(getBoards()).rejects.toThrow('Database error');
     });
@@ -64,26 +62,28 @@ describe('Board API', () => {
 
       vi.mocked(invoke).mockResolvedValue(mockBoard);
 
-      const { createBoard } = await import('$lib/api/boards');
-      const board = await createBoard('New Board');
+      const board = await createBoard('New Board', '#95E1D3');
 
-      expect(invoke).toHaveBeenCalledWith('create_board', { name: 'New Board' });
+      expect(invoke).toHaveBeenCalledWith('create_board', { name: 'New Board', color: '#95E1D3' });
       expect(board).toEqual(mockBoard);
       expect(board.name).toBe('New Board');
     });
 
     it('should reject empty board names', async () => {
-      const { createBoard } = await import('$lib/api/boards');
+      await expect(createBoard('')).rejects.toThrow('Board name cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
+    });
 
-      await expect(createBoard('')).rejects.toThrow();
+    it('should reject whitespace-only names', async () => {
+      await expect(createBoard('   ')).rejects.toThrow('Board name cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
     });
   });
 
   describe('deleteBoard', () => {
     it('should delete a board by ID', async () => {
-      vi.mocked(invoke).mockResolvedValue(null);
+      vi.mocked(invoke).mockResolvedValue(undefined);
 
-      const { deleteBoard } = await import('$lib/api/boards');
       await deleteBoard('1');
 
       expect(invoke).toHaveBeenCalledWith('delete_board', { id: '1' });
@@ -91,7 +91,7 @@ describe('Board API', () => {
   });
 
   describe('updateBoard', () => {
-    it('should update board properties', async () => {
+    it('should update board name', async () => {
       const updatedBoard: Board = {
         id: '1',
         name: 'Updated Name',
@@ -102,7 +102,6 @@ describe('Board API', () => {
 
       vi.mocked(invoke).mockResolvedValue(updatedBoard);
 
-      const { updateBoard } = await import('$lib/api/boards');
       const board = await updateBoard('1', { name: 'Updated Name' });
 
       expect(invoke).toHaveBeenCalledWith('update_board', {
@@ -110,6 +109,31 @@ describe('Board API', () => {
         name: 'Updated Name',
       });
       expect(board.name).toBe('Updated Name');
+    });
+
+    it('should update board color', async () => {
+      const updatedBoard: Board = {
+        id: '1',
+        name: 'Board',
+        color: '#NEW_COLOR',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      vi.mocked(invoke).mockResolvedValue(updatedBoard);
+
+      const board = await updateBoard('1', { color: '#NEW_COLOR' });
+
+      expect(invoke).toHaveBeenCalledWith('update_board', {
+        id: '1',
+        color: '#NEW_COLOR',
+      });
+      expect(board.color).toBe('#NEW_COLOR');
+    });
+
+    it('should reject empty board names', async () => {
+      await expect(updateBoard('1', { name: '' })).rejects.toThrow('Board name cannot be empty');
+      expect(invoke).not.toHaveBeenCalled();
     });
   });
 });

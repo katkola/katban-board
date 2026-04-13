@@ -1,5 +1,5 @@
 use rusqlite::Connection;
-use crate::models::{Tag, TagId, BoardId, CardId, Card, CardTag};
+use crate::models::{Tag, TagId, BoardId, CardId, Card};
 use crate::db::connection::create_connection;
 
 /// Get all tags for a board

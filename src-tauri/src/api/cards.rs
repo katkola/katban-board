@@ -1,4 +1,3 @@
-use rusqlite::Connection;
 use chrono::{DateTime, Utc};
 use crate::models::{Card, CardId, ColumnId};
 use crate::db::connection::create_connection;

@@ -7,5 +7,5 @@ pub mod reminder;
 pub use board::{Board, BoardId};
 pub use column::{Column, ColumnId};
 pub use card::{Card, CardId};
-pub use tag::{Tag, TagId, CardTag};
+pub use tag::{Tag, TagId};
 pub use reminder::{Reminder, ReminderId};

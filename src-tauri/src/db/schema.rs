@@ -1,5 +1,4 @@
 use rusqlite::Connection;
-use crate::models::{BoardId, ColumnId, CardId, TagId};
 
 /// Initialize the database schema
 pub fn init_db(conn: &Connection) -> Result<(), rusqlite::Error> {
@@ -138,7 +137,7 @@ pub fn seed_default_data(conn: &mut Connection) -> Result<(), rusqlite::Error> {
         return Ok(()); // Already seeded
     }
 
-    let mut tx = conn.transaction()?;
+    let tx = conn.transaction()?;
 
     for board in default_boards() {
         // Insert board

@@ -24,11 +24,19 @@ export interface Column {
   created_at: string; // ISO 8601 datetime
 }
 
+export enum Status {
+  ToDo = 'To Do',
+  InProgress = 'In Progress',
+  Done = 'Done',
+}
+
 /** Represents a task card in a column */
-export interface Card {
+export interface Task {
   id: UUID;
   column_id: UUID;
+  board_id: UUID;
   title: string;
+  status: Status;
   description: string | null;
   due_date: string | null; // ISO 8601 datetime or null
   position: number;

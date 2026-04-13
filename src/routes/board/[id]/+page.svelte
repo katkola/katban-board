@@ -5,7 +5,7 @@
   import { getBoard } from '$lib/api/boards';
   import { getColumns } from '$lib/api/columns';
   import { getCards } from '$lib/api/cards';
-  import type { Board, Column as ColumnType, Card as CardType } from '$lib/types';
+  import type { Board, Column as ColumnType, Task as CardType } from '$lib/types';
 
   let board: Board | null = null;
   let columns: ColumnType[] = [];
@@ -80,7 +80,7 @@
     background: white;
     border-bottom: 1px solid #e5e7eb;
     padding: 1rem 2rem;
-    sticky: 0;
+    position: sticky;
     top: 0;
     z-index: 10;
   }

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Card } from '../types';
+import type { Task } from '../types';
 
 /**
  * Card API functions
@@ -10,31 +10,35 @@ export async function createCard(
   title: string,
   description?: string,
   dueDate?: string
-): Promise<Card> {
-  return await invoke<Card>('create_card', { columnId, title, description, dueDate });
+): Promise<Task> {
+  if (!title || title.trim().length === 0) {
+    throw new Error('Card title cannot be empty');
+  }
+  return await invoke<Task>('create_card', { columnId, title, description, dueDate });
 }
 
-export async function getCards(columnId?: string, boardId?: string): Promise<Card[]> {
-  return await invoke<Card[]>('get_cards', { columnId, boardId });
+export async function getCards(columnId?: string, boardId?: string): Promise<Task[]> {
+  return await invoke<Task[]>('get_cards', { columnId, boardId });
 }
 
-export async function getCard(id: string): Promise<Card> {
-  return await invoke<Card>('get_card', { id });
+export async function getCard(id: string): Promise<Task> {
+  return await invoke<Task>('get_card', { id });
 }
 
 export async function updateCard(
   id: string,
-  title?: string,
-  description?: string,
-  dueDate?: string
-): Promise<Card> {
-  return await invoke<Card>('update_card', { id, title, description, dueDate });
+  updates?: { title?: string; description?: string; due_date?: string }
+): Promise<Task> {
+  if (updates?.title !== undefined && updates.title.trim().length === 0) {
+    throw new Error('Card title cannot be empty');
+  }
+  return await invoke<Task>('update_card', { id, ...updates });
 }
 
 export async function deleteCard(id: string): Promise<void> {
   return await invoke<void>('delete_card', { id });
 }
 
-export async function moveCard(id: string, columnId: string, position: number): Promise<Card> {
-  return await invoke<Card>('move_card', { id, columnId, position });
+export async function moveCard(id: string, columnId: string, position: number): Promise<Task> {
+  return await invoke<Task>('move_card', { id, columnId, position });
 }

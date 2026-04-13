@@ -34,9 +34,9 @@ pub struct CardTag {
     pub tag_id: TagId,
 }
 
-impl CardTag {
-    /// Create a new card-tag association
-    pub fn new(card_id: CardId, tag_id: TagId) -> Self {
-        Self { card_id, tag_id }
-    }
-}
+// impl CardTag {
+//     /// Create a new card-tag association
+//     pub fn new(card_id: CardId, tag_id: TagId) -> Self {
+//         Self { card_id, tag_id }
+//     }
+// }
