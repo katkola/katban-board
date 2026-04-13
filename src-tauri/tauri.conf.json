@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "tauri-appkatban-board",
-        "width": 800,
-        "height": 600
+        "title": "Katban Board",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700
       }
     ],
     "security": {

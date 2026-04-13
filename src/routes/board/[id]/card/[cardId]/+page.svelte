@@ -73,7 +73,7 @@
 
     try {
       await deleteCard(card.id);
-      goto(`/board/${$page.params.boardId}`);
+      goto(`/board/${$page.params.id}`);
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to delete card';
     }
